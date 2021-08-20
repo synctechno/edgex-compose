@@ -35,7 +35,7 @@ define OPTIONS
  - arm64 no-secty dev app-dev -
  - zmq-bus mqtt-bus mqtt-broker -
  - taf-secty taf-no-secty taf-perf taf-perf-no-secty -
- - ds-bacnet ds-camera ds-grove ds-modbus ds-mqtt ds-rest ds-snmp ds-virtual ds-llrp ds-coap ds-gpio -
+ - ds-bacnet ds-camera ds-grove ds-modbus ds-mqtt ds-rest ds-snmp ds-virtual ds-llrp ds-coap ds-gpio ds-nmea -
  - asc-http asc-mqtt as-llrp -
  - modbus-sim ui -
 endef
@@ -248,6 +248,26 @@ ifeq (modbus-sim, $(filter modbus-sim,$(ARGS)))
 	COMPOSE_FILES:=$(COMPOSE_FILES) -f add-modbus-simulator.yml
 endif
 
+################
+# SyncTechno
+################
+ifeq (ds-nmea, $(filter ds-nmea,$(ARGS)))
+	COMPOSE_FILES:=$(COMPOSE_FILES) -f add-device-nmea.yml
+	ifneq (no-secty, $(filter no-secty,$(ARGS)))
+		ifeq ($(TOKEN_LIST),"")
+			TOKEN_LIST:=device-nmea
+		else
+			TOKEN_LIST:=$(TOKEN_LIST),device-nmea
+		endif
+		ifeq ($(KNOWN_SECRETS_LIST),"")
+			KNOWN_SECRETS_LIST:=redisdb[device-nmea]
+		else
+			KNOWN_SECRETS_LIST:=$(KNOWN_SECRETS_LIST),redisdb[device-nmea]
+		endif
+		COMPOSE_FILES:=$(COMPOSE_FILES) 
+	endif
+endif
+
 # Add Application Services
 ifeq (asc-http, $(filter asc-http,$(ARGS)))
 	COMPOSE_FILES:=$(COMPOSE_FILES) -f add-asc-http-export.yml
@@ -349,7 +369,7 @@ ifeq (taf-secty, $(filter taf-secty,$(ARGS)))
 	TOKEN_LIST:=app-http-export,app-mqtt-export,app-functional-tests,scalability-test-mqtt-export,device-modbus
 	# Note that the services in this list should be separated by ';', but that causes issues with build scripts, so
 	# have to list them individually.
-	KNOWN_SECRETS_LIST:=redisdb[app-rules-engine],redisdb[app-http-export],redisdb[app-mqtt-export],redisdb[scalability-test-mqtt-export],redisdb[device-modbus],redisdb[device-rest],redisdb[device-virtual]
+	KNOWN_SECRETS_LIST:=redisdb[app-rules-engine],redisdb[app-http-export],redisdb[app-mqtt-export],redisdb[scalability-test-mqtt-export],redisdb[device-modbus],redisdb[device-rest],redisdb[device-virtual],redisdb[device-nmea]
 	EXTRA_PROXY_ROUTE_LIST:=device-modbus.http://edgex-device-modbus:59901
 
 	COMPOSE_FILES:= \
@@ -363,6 +383,7 @@ ifeq (taf-secty, $(filter taf-secty,$(ARGS)))
 		-f add-device-virtual.yml \
 		-f add-device-rest.yml \
 		-f add-device-modbus.yml \
+		-f add-device-nmea.yml \
 		-f add-taf-device-services-mods.yml \
 		-f add-mqtt-broker.yml \
 		-f add-modbus-simulator.yml
@@ -390,6 +411,7 @@ else
 			-f add-device-virtual.yml \
 			-f add-device-rest.yml \
 			-f add-device-modbus.yml \
+			-f add-device-nmea.yml \
 			-f add-taf-device-services-mods.yml \
 			-f add-mqtt-broker.yml \
 			-f add-modbus-simulator.yml
@@ -400,7 +422,7 @@ else
 			TOKEN_LIST:=app-http-export,app-mqtt-export,app-functional-tests,scalability-test-mqtt-export
 			# Note that the services in this list should be separated by ';', but that causes issues with build scripts, so
 			# have to list them individually.
-			KNOWN_SECRETS_LIST:=redisdb[app-rules-engine],redisdb[app-http-export],redisdb[app-mqtt-export],redisdb[scalability-test-mqtt-export],redisdb[device-rest],redisdb[device-virtual]
+			KNOWN_SECRETS_LIST:=redisdb[app-rules-engine],redisdb[app-http-export],redisdb[app-mqtt-export],redisdb[scalability-test-mqtt-export],redisdb[device-rest],redisdb[device-virtual],redisdb[device-nmea]
 			EXTRA_PROXY_ROUTE_LIST:=device-modbus.http://edgex-device-modbus:59901
 
     		COMPOSE_FILES:= \
@@ -410,7 +432,8 @@ else
     			-f add-asc-mqtt-export.yml \
     			-f add-device-virtual.yml \
     			-f add-device-rest.yml \
-    			-f add-mqtt-broker.yml
+    			-f add-mqtt-broker.yml \
+    			-f add-device-nmea.yml
 			asc_mqtt_export_ext:= $(shell GEN_EXT_DIR="$(GEN_EXT_DIR)" ./gen_secure_compose_ext.sh app-service-mqtt-export \
 				app-mqtt-export app-service-configurable)
 			ds_virtual_ext:= $(shell GEN_EXT_DIR="$(GEN_EXT_DIR)" ./gen_secure_compose_ext.sh device-virtual)
@@ -424,6 +447,7 @@ else
 					-f add-asc-mqtt-export.yml \
 					-f add-device-virtual.yml \
 					-f add-device-rest.yml \
+					-f add-device-nmea.yml \
 					-f add-mqtt-broker.yml
 				NO_SECURITY:=-no-secty
 			endif
@@ -454,6 +478,7 @@ portainer-down:
 	make -C ${RELEASE_FOLDER} portainer-down
 
 build:
+	make compose ds-nmea
 	make compose ds-rest ds-virtual
 	make compose ds-rest ds-virtual arm64
 	make compose ds-rest ds-virtual no-secty
@@ -535,6 +560,7 @@ down:
 		-f add-device-gpio.yml \
 		-f add-device-rfid-llrp.yml \
 		-f add-device-virtual.yml \
+		-f add-device-nmea.yml \
 		-f add-asc-http-export.yml \
 		-f add-asc-mqtt-export.yml \
 		-f add-modbus-simulator.yml \

@@ -274,7 +274,8 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 1883:1883/tcp
+    - published: 1883
+      target: 1883
     read_only: true
     security_opt:
     - no-new-privileges:true

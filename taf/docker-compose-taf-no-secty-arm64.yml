@@ -53,7 +53,9 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 59705:59705/tcp
+    - protocol: tcp
+      published: 59705
+      target: 59705
     read_only: true
     security_opt:
     - no-new-privileges:true
@@ -381,7 +383,8 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 1883:1883/tcp
+    - published: 1883
+      target: 1883
     read_only: true
     security_opt:
     - no-new-privileges:true
@@ -466,7 +469,8 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 59710:59703/tcp
+    - published: 59710
+      target: 59703
     read_only: true
     security_opt:
     - no-new-privileges:true

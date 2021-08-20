@@ -29,8 +29,8 @@ networks:
     driver: bridge
 services:
   app-service-functional-tests:
-    command: /app-service-configurable -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: app-functional-tests
     depends_on:
     - consul
@@ -78,7 +78,9 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 59705:59705/tcp
+    - protocol: tcp
+      published: 59705
+      target: 59705
     read_only: true
     security_opt:
     - no-new-privileges:true
@@ -87,8 +89,8 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-functional-tests:/tmp/edgex/secrets/app-functional-tests:ro,z
   app-service-http-export:
-    command: /app-service-configurable -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-app-http-export
     depends_on:
     - consul
@@ -147,8 +149,8 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-http-export:/tmp/edgex/secrets/app-http-export:ro,z
   app-service-mqtt-export:
-    command: /app-service-configurable -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-app-mqtt-export
     depends_on:
     - consul
@@ -211,8 +213,8 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-mqtt-export:/tmp/edgex/secrets/app-mqtt-export:ro,z
   app-service-rules:
-    command: /app-service-configurable -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-app-rules-engine
     depends_on:
     - consul
@@ -268,7 +270,7 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-rules-engine:/tmp/edgex/secrets/app-rules-engine:ro,z
   command:
-    command: /core-command -cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res
+    command: /core-command "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
     container_name: edgex-core-command
     depends_on:
     - consul
@@ -373,7 +375,7 @@ services:
     - consul-acl-token:/tmp/edgex/secrets/consul-acl-token:z
     - /tmp/edgex/secrets/edgex-consul:/tmp/edgex/secrets/edgex-consul:ro,z
   data:
-    command: /core-data -cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res
+    command: /core-data "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
     container_name: edgex-core-data
     depends_on:
     - consul
@@ -541,7 +543,7 @@ services:
     - /tmp/edgex/secrets/device-modbus:/tmp/edgex/secrets/device-modbus:ro,z
     - PROFILE_VOLUME_PLACE_HOLDER:CONF_DIR_PLACE_HOLDER:z
   device-rest:
-    command: /device-rest -cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res
+    command: /device-rest "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
     container_name: edgex-device-rest
     depends_on:
     - consul
@@ -691,9 +693,11 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 8000:8000/tcp
+    - published: 8000
+      target: 8000
     - 127.0.0.1:8100:8100/tcp
-    - 8443:8443/tcp
+    - published: 8443
+      target: 8443
     read_only: true
     restart: on-failure
     security_opt:
@@ -758,7 +762,7 @@ services:
     - postgres-config:/tmp/postgres-config:z
     - postgres-data:/var/lib/postgresql/data:z
   metadata:
-    command: /core-metadata -cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res
+    command: /core-metadata "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
     container_name: edgex-core-metadata
     depends_on:
     - consul
@@ -833,14 +837,15 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 1883:1883/tcp
+    - published: 1883
+      target: 1883
     read_only: true
     security_opt:
     - no-new-privileges:true
     user: 2002:2001
   notifications:
-    command: /support-notifications -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /support-notifications "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-support-notifications
     depends_on:
     - consul
@@ -995,8 +1000,8 @@ services:
     - kuiper-data:/kuiper/data:z
     - kuiper-config:/kuiper/etc/sources:z
   scalability-test-mqtt-export:
-    command: /app-service-configurable -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-scalability-test-mqtt-export
     depends_on:
     - consul
@@ -1051,7 +1056,8 @@ services:
     networks:
       edgex-network: {}
     ports:
-    - 59710:59703/tcp
+    - published: 59710
+      target: 59703
     read_only: true
     security_opt:
     - no-new-privileges:true
@@ -1060,8 +1066,8 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/scalability-test-mqtt-export:/tmp/edgex/secrets/scalability-test-mqtt-export:ro,z
   scheduler:
-    command: /support-scheduler -cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res
+    command: /support-scheduler "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-support-scheduler
     depends_on:
     - consul
@@ -1199,7 +1205,8 @@ services:
     volumes:
     - edgex-init:/edgex-init:z
   system:
-    command: /sys-mgmt-agent -cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res
+    command: /sys-mgmt-agent "-cp=consul.http://edgex-core-consul:8500 --registry
+      --confdir=/res"
     container_name: edgex-sys-mgmt-agent
     depends_on:
     - command
