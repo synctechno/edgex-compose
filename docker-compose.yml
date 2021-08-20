@@ -29,8 +29,7 @@ networks:
     driver: bridge
 services:
   app-service-rules:
-    command: /app-service-configurable "-cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res"
+    command: /app-service-configurable -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-app-rules-engine
     depends_on:
     - consul
@@ -86,7 +85,7 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-rules-engine:/tmp/edgex/secrets/app-rules-engine:ro,z
   command:
-    command: /core-command "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
+    command: /core-command -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-core-command
     depends_on:
     - consul
@@ -148,7 +147,7 @@ services:
     entrypoint:
     - /edgex-init/consul_wait_install.sh
     environment:
-      ADD_REGISTRY_ACL_ROLES: ''
+      ADD_REGISTRY_ACL_ROLES: 'device-iso19847'
       API_GATEWAY_HOST: edgex-kong
       API_GATEWAY_STATUS_PORT: '8100'
       EDGEX_GROUP: '2001'
@@ -191,7 +190,7 @@ services:
     - consul-acl-token:/tmp/edgex/secrets/consul-acl-token:z
     - /tmp/edgex/secrets/edgex-consul:/tmp/edgex/secrets/edgex-consul:ro,z
   data:
-    command: /core-data "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
+    command: /core-data -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-core-data
     depends_on:
     - consul
@@ -412,6 +411,60 @@ services:
   #   volumes:
   #   - edgex-init:/edgex-init:ro,z
   #   - /tmp/edgex/secrets/device-virtual:/tmp/edgex/secrets/device-virtual:ro,z
+  device-iso19847:
+    command: /device-iso19847 -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
+    container_name: edgex-device-iso19847
+    depends_on:
+    - consul
+    - data
+    - metadata
+    - security-bootstrapper
+    entrypoint:
+    - /edgex-init/ready_to_run_wait_install.sh
+    environment:
+      API_GATEWAY_HOST: edgex-kong
+      API_GATEWAY_STATUS_PORT: '8100'
+      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+      CLIENTS_CORE_DATA_HOST: edgex-core-data
+      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+      DATABASES_PRIMARY_HOST: edgex-redis
+      EDGEX_SECURITY_SECRET_STORE: "true"
+      MESSAGEQUEUE_HOST: edgex-redis
+      PROXY_SETUP_HOST: edgex-security-proxy-setup
+      REGISTRY_HOST: edgex-core-consul
+      SECRETSTORE_HOST: edgex-vault
+      SECRETSTORE_PORT: '8200'
+      SERVICE_HOST: edgex-device-iso19847
+      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
+      STAGEGATE_BOOTSTRAPPER_STARTPORT: '54321'
+      STAGEGATE_DATABASE_HOST: edgex-redis
+      STAGEGATE_DATABASE_PORT: '6379'
+      STAGEGATE_DATABASE_READYPORT: '6379'
+      STAGEGATE_KONGDB_HOST: edgex-kong-db
+      STAGEGATE_KONGDB_PORT: '5432'
+      STAGEGATE_KONGDB_READYPORT: '54325'
+      STAGEGATE_READY_TORUNPORT: '54329'
+      STAGEGATE_REGISTRY_HOST: edgex-core-consul
+      STAGEGATE_REGISTRY_PORT: '8500'
+      STAGEGATE_REGISTRY_READYPORT: '54324'
+      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
+      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: '54322'
+      STAGEGATE_WAITFOR_TIMEOUT: 60s
+    hostname: edgex-device-iso19847
+    image: synctechno/edgex-device-iso19847:2.0.0
+    networks:
+      edgex-network: {}
+    ports:
+    - 127.0.0.1:59900:59900/tcp
+    read_only: true
+    security_opt:
+    - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+    - edgex-init:/edgex-init:ro,z
+    - /tmp/edgex/secrets/device-iso19847:/tmp/edgex/secrets/device-iso19847:ro,z
   kong:
     container_name: edgex-kong
     depends_on:
@@ -523,7 +576,7 @@ services:
     - postgres-config:/tmp/postgres-config:z
     - postgres-data:/var/lib/postgresql/data:z
   metadata:
-    command: /core-metadata "-cp=consul.http://edgex-core-consul:8500 --registry --confdir=/res"
+    command: /core-metadata -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-core-metadata
     depends_on:
     - consul
@@ -579,8 +632,7 @@ services:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/core-metadata:/tmp/edgex/secrets/core-metadata:ro,z
   notifications:
-    command: /support-notifications "-cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res"
+    command: /support-notifications -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-support-notifications
     depends_on:
     - consul
@@ -735,8 +787,7 @@ services:
     - kuiper-data:/kuiper/data:z
     - kuiper-config:/kuiper/etc/sources:z
   scheduler:
-    command: /support-scheduler "-cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res"
+    command: /support-scheduler -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-support-scheduler
     depends_on:
     - consul
@@ -797,8 +848,8 @@ services:
     - security-bootstrapper
     - vault
     environment:
-      ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-rest],redisdb[device-virtual]
-      ADD_SECRETSTORE_TOKENS: ''
+      ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-iso19847]
+      ADD_SECRETSTORE_TOKENS: 'device-iso19847'
       API_GATEWAY_HOST: edgex-kong
       API_GATEWAY_STATUS_PORT: '8100'
       EDGEX_GROUP: '2001'
@@ -874,8 +925,7 @@ services:
     volumes:
     - edgex-init:/edgex-init:z
   system:
-    command: /sys-mgmt-agent "-cp=consul.http://edgex-core-consul:8500 --registry
-      --confdir=/res"
+    command: /sys-mgmt-agent -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-sys-mgmt-agent
     depends_on:
     - command
