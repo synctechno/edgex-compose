@@ -84,6 +84,63 @@ services:
     volumes:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/app-rules-engine:/tmp/edgex/secrets/app-rules-engine:ro,z
+  appservice-iso19847:
+    command: /appservice-iso19847 -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
+    container_name: appservice-iso19847
+    depends_on:
+    - consul
+    - data
+    - security-bootstrapper
+    entrypoint:
+    - /edgex-init/ready_to_run_wait_install.sh
+    environment:
+      API_GATEWAY_HOST: edgex-kong
+      API_GATEWAY_STATUS_PORT: '8100'
+      CLIENTS_CORE_COMMAND_HOST: edgex-core-command
+      CLIENTS_CORE_DATA_HOST: edgex-core-data
+      CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
+      CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
+      CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
+      DATABASES_PRIMARY_HOST: edgex-redis
+      EDGEX_PROFILE: appservice-iso19847
+      # EDGEX_SECURITY_SECRET_STORE: "true"
+      MESSAGEQUEUE_HOST: edgex-redis
+      PROXY_SETUP_HOST: edgex-security-proxy-setup
+      REGISTRY_HOST: edgex-core-consul
+      SECRETSTORE_HOST: edgex-vault
+      SECRETSTORE_PORT: '8200'
+      SERVICE_HOST: edgex-app-appservice-iso19847
+      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
+      STAGEGATE_BOOTSTRAPPER_STARTPORT: '54321'
+      STAGEGATE_DATABASE_HOST: edgex-redis
+      STAGEGATE_DATABASE_PORT: '6379'
+      STAGEGATE_DATABASE_READYPORT: '6379'
+      STAGEGATE_KONGDB_HOST: edgex-kong-db
+      STAGEGATE_KONGDB_PORT: '5432'
+      STAGEGATE_KONGDB_READYPORT: '54325'
+      STAGEGATE_READY_TORUNPORT: '54329'
+      STAGEGATE_REGISTRY_HOST: edgex-core-consul
+      STAGEGATE_REGISTRY_PORT: '8500'
+      STAGEGATE_REGISTRY_READYPORT: '54324'
+      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
+      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: '54322'
+      STAGEGATE_WAITFOR_TIMEOUT: 60s
+      TRIGGER_EDGEXMESSAGEBUS_PUBLISHHOST_HOST: edgex-redis
+      TRIGGER_EDGEXMESSAGEBUS_SUBSCRIBEHOST_HOST: edgex-redis
+    hostname: edgex-app-appservice-iso19847
+    image: synctechno/appservice-iso19847:1.0
+    networks:
+      edgex-network: {}
+    ports:
+    - 127.0.0.1:59702:59702/tcp
+    read_only: true
+    security_opt:
+    - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+    - edgex-init:/edgex-init:ro,z
+    - /tmp/edgex/secrets/appservice-iso19847:/tmp/edgex/secrets/appservice-iso19847:ro,z
+
   command:
     command: /core-command -cp="consul.http://edgex-core-consul:8500" --registry --confdir=/res
     container_name: edgex-core-command
@@ -147,7 +204,7 @@ services:
     entrypoint:
     - /edgex-init/consul_wait_install.sh
     environment:
-      ADD_REGISTRY_ACL_ROLES: 'device-iso19847'
+      ADD_REGISTRY_ACL_ROLES: 'device-iso19847,appservice-iso19847'  # device-iso19847
       API_GATEWAY_HOST: edgex-kong
       API_GATEWAY_STATUS_PORT: '8100'
       EDGEX_GROUP: '2001'
@@ -446,14 +503,14 @@ services:
       STAGEGATE_KONGDB_PORT: '5432'
       STAGEGATE_KONGDB_READYPORT: '54325'
       STAGEGATE_READY_TORUNPORT: '54329'
-      STAGEGATE_REGISTRY_HOST: edgex-core-consul
+      STAGEGATE_REGISTRY_HOST: "127.0.0.1"
       STAGEGATE_REGISTRY_PORT: '8500'
       STAGEGATE_REGISTRY_READYPORT: '54324'
       STAGEGATE_SECRETSTORESETUP_HOST: "127.0.0.1" # host network mode edgex-security-secretstore-setup
       STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: '54322'
       STAGEGATE_WAITFOR_TIMEOUT: 60s
     hostname: edgex-device-iso19847
-    image: synctechno/edgex-device-iso19847:2.0.0
+    image: synctechno/edgex-device-iso19847:2.0.1
     network_mode: host
     # networks:
     #   edgex-network: {}
@@ -466,6 +523,7 @@ services:
     volumes:
     - edgex-init:/edgex-init:ro,z
     - /tmp/edgex/secrets/device-iso19847:/tmp/edgex/secrets/device-iso19847:ro,z
+    - ./logs/device-iso19847:/var/logs/device-iso19847:z
   kong:
     container_name: edgex-kong
     depends_on:
@@ -849,8 +907,8 @@ services:
     - security-bootstrapper
     - vault
     environment:
-      ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-iso19847]
-      ADD_SECRETSTORE_TOKENS: 'device-iso19847'
+      ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-iso19847],redisdb[appservice-iso19847]
+      ADD_SECRETSTORE_TOKENS: 'device-iso19847,appservice-iso19847'
       API_GATEWAY_HOST: edgex-kong
       API_GATEWAY_STATUS_PORT: '8100'
       EDGEX_GROUP: '2001'

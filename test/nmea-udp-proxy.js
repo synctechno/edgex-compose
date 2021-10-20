@@ -7,18 +7,26 @@ const MULTICAST_PORT = 60001;
 const MULTICAST_SRC_PORT = 60000;
 
 
-const TCP_PORT = 9091;
+// const TCP_PORT = 9091;
+const TCP_PORT = 10001;
 
 
-udpClient.bind(MULTICAST_SRC_PORT, function () {         // Add the HOST_IP_ADDRESS for reliability
-    udpClient.addMembership(MULTICAST_ADDRESS); 
+// udpClient.bind(MULTICAST_SRC_PORT, function () {         // Add the HOST_IP_ADDRESS for reliability
+//     udpClient.addMembership(MULTICAST_ADDRESS); 
 
-});
+// });
 
  
+ var useUDPBC = false;
  
  function sendNMEAMulticast(nmeaSentence) {
-    var str450 = "UdPbC\\s:BB0003,n:0068*3C\\" + nmeaSentence;
+    var str450 = '';
+    if(useUDPBC) {
+        str450 = "UdPbC\\s:BB0003,n:0068*3C\\" + nmeaSentence;
+    }
+    else {
+        str450 = nmeaSentence;
+    }
     console.log( '|'+str450+'|' );
     udpClient.send(str450, 0, str450.length, MULTICAST_PORT, MULTICAST_ADDRESS);
  }
@@ -75,3 +83,32 @@ server.listen(TCP_PORT, function() {
     });
 });
 
+
+
+
+
+const udpServer = dgram.createSocket('udp4');
+
+udpServer.on('error', (err) => {
+  console.log(`server error:\n${err.stack}`);
+  server.close();
+});
+
+udpServer.on('message', (msg, rinfo) => {
+  console.log(`server got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+
+  msg = msg.toString()
+  var nmeaArray = msg.split(/[\r\n]+/);
+  nmeaArray.map((nmeaSentence)=>{
+      if(nmeaSentence.length > 0)
+          sendNMEAMulticast(nmeaSentence);
+  })
+
+});
+
+udpServer.on('listening', () => {
+  const address = server.address();
+  console.log(`server listening ${address.address}:${address.port}`);
+});
+
+udpServer.bind(TCP_PORT);
